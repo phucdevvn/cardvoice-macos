@@ -1,0 +1,100 @@
+{
+  "format": "cardvoice-apkg-manifest-v1",
+  "deckName": "English::CardVoice::Self-made Sentences",
+  "noteType": "CardVoice Cloze v1",
+  "createdAt": 1787569164,
+  "audioPolicy": "full-sentence-back-only",
+  "notes": [
+    {
+      "id": "cv001",
+      "guid": "1Hdp9J8WAvA",
+      "sentence": "When I try to think and speak in English, my mind suddenly goes blank. I can't help but remain silent.",
+      "clozeText": "When I try to think and speak in English, {{c1::my mind suddenly goes blank}}. I can't help but remain silent.",
+      "targets": ["my mind goes blank"],
+      "pattern": "my mind goes blank",
+      "meaning": "đầu óc đột nhiên trống rỗng",
+      "audioFilename": "cardvoice_cv001.mp3",
+      "audioFieldIndex": 3,
+      "fieldCount": 5,
+      "clozeNumbers": [1]
+    },
+    {
+      "id": "cv002",
+      "guid": "X5OUQ4556QM",
+      "sentence": "As I ran away from the dark alley, I heard someone's voice trail off behind me.",
+      "clozeText": "As I ran away from the dark alley, I heard {{c1::someone's voice trail off}} behind me.",
+      "targets": ["someone's voice trails off"],
+      "pattern": "someone's voice trails off",
+      "meaning": "giọng nhỏ dần rồi ngừng lại",
+      "audioFilename": "cardvoice_cv002.mp3",
+      "audioFieldIndex": 3,
+      "fieldCount": 5,
+      "clozeNumbers": [1]
+    },
+    {
+      "id": "cv003",
+      "guid": "Z6ONIbQbABA",
+      "sentence": "For all we know, getting eight hours of sleep a night could be exactly what keeps us mentally healthy. You can't talk me into sleeping less than that, and you'd probably be better off doing the same.",
+      "clozeText": "{{c1::For all we know}}, getting eight hours of sleep a night could be exactly what keeps us mentally healthy. You can't {{c2::talk me into sleeping less than that}}, and you'd probably {{c3::be better off doing the same}}.",
+      "targets": ["for all we know", "talk someone into + -ing", "be better off + -ing"],
+      "pattern": "for all we know · talk someone into + -ing · be better off + -ing",
+      "meaning": "biết đâu / với những gì ta biết thì có thể; thuyết phục ai làm gì; sẽ tốt hơn nếu làm gì",
+      "audioFilename": "cardvoice_cv003.mp3",
+      "audioFieldIndex": 3,
+      "fieldCount": 5,
+      "clozeNumbers": [1, 2, 3]
+    },
+    {
+      "id": "cv004",
+      "guid": "7iI9SG6KC5M",
+      "sentence": "I hit a bump while working on the problem and couldn't figure it out. After a while, I figured that it had nothing to do with what I'd been working on—I was tackling the wrong problem.",
+      "clozeText": "I {{c1::hit a bump}} while working on the problem and couldn't figure it out. After a while, {{c2::I figured that}} it {{c3::had nothing to do with}} what I'd been working on—I was tackling the wrong problem.",
+      "targets": ["hit a bump", "I figured (that)...", "have nothing to do with + noun/-ing"],
+      "pattern": "hit a bump · I figured (that)... · have nothing to do with + noun/-ing",
+      "meaning": "gặp trở ngại; tôi nghĩ / đoán / kết luận rằng; không liên quan gì đến",
+      "audioFilename": "cardvoice_cv004.mp3",
+      "audioFieldIndex": 3,
+      "fieldCount": 5,
+      "clozeNumbers": [1, 2, 3]
+    },
+    {
+      "id": "cv005",
+      "guid": "7a1TOcK6YjA",
+      "sentence": "The building looked so run-down that we decided to repaint it and repair the walls.",
+      "clozeText": "The building looked so {{c1::run-down}} that we decided to repaint it and repair the walls.",
+      "targets": ["run-down"],
+      "pattern": "run-down",
+      "meaning": "xuống cấp, cũ kỹ, tồi tàn",
+      "audioFilename": "cardvoice_cv005.mp3",
+      "audioFieldIndex": 3,
+      "fieldCount": 5,
+      "clozeNumbers": [1]
+    },
+    {
+      "id": "cv006",
+      "guid": "53_FQiZ0llo",
+      "sentence": "I stick up for her because she's determined to work things out before everything turns ugly. You're just making a fuss about it without actually solving anything.",
+      "clozeText": "I {{c1::stick up for her}} because she's {{c2::determined to work things out}} before everything turns ugly. You're just {{c3::making a fuss about it}} without actually solving anything.",
+      "targets": ["stick up for someone", "be determined to + verb", "make a fuss (about/over something)"],
+      "pattern": "stick up for someone · be determined to + verb · make a fuss (about/over something)",
+      "meaning": "bênh vực ai; quyết tâm làm gì; làm ầm / làm quá chuyện gì",
+      "audioFilename": "cardvoice_cv006.mp3",
+      "audioFieldIndex": 3,
+      "fieldCount": 5,
+      "clozeNumbers": [1, 2, 3]
+    },
+    {
+      "id": "cv007",
+      "guid": "6kgrOVZcuSc",
+      "sentence": "The prospect of becoming a teacher sends chills down my spine. Just a couple of months ago, I didn't know what to do with my career because programming wasn't fun anymore and AI was already doing a lot of the work.",
+      "clozeText": "{{c1::The prospect of becoming a teacher}} sends chills down my spine. Just a couple of months ago, I didn't know what to do with my career because programming wasn't fun anymore and AI was already doing a lot of the work.",
+      "targets": ["the prospect of + noun/-ing"],
+      "pattern": "the prospect of + noun/-ing",
+      "meaning": "viễn cảnh / khả năng sẽ làm gì",
+      "audioFilename": "cardvoice_cv007.mp3",
+      "audioFieldIndex": 3,
+      "fieldCount": 5,
+      "clozeNumbers": [1]
+    }
+  ]
+}
