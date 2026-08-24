@@ -110,9 +110,19 @@ struct SettingsView: View {
 
     private func keyRow(_ profile: APIKeyProfile) -> some View {
         HStack {
-            Toggle(profile.label, isOn: selectionBinding(for: profile))
-                .toggleStyle(.radio)
+            Button {
+                vm.selectedKeyID = profile.id
+                vm.persist()
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: vm.selectedKeyID == profile.id ? "largecircle.fill.circle" : "circle")
+                    Text(profile.label)
+                }
+            }
+            .buttonStyle(.plain)
+
             Spacer()
+
             Button(role: .destructive) {
                 vm.deleteKey(profile)
             } label: {
@@ -129,17 +139,6 @@ struct SettingsView: View {
                     .font(.caption)
             }
         }
-    }
-
-    private func selectionBinding(for profile: APIKeyProfile) -> Binding<Bool> {
-        Binding(
-            get: { vm.selectedKeyID == profile.id },
-            set: { isSelected in
-                guard isSelected else { return }
-                vm.selectedKeyID = profile.id
-                vm.persist()
-            }
-        )
     }
 
     private var trimmedSecret: String {
