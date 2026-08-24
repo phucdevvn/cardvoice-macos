@@ -6,24 +6,24 @@ let outputPath = arguments.count > 1 ? arguments[1] : ".build/AppIcon-Source.png
 
 let size = NSSize(width: 1024, height: 1024)
 let image = NSImage(size: size)
-
 image.lockFocus()
-defer { image.unlockFocus() }
 
 let bounds = NSRect(origin: .zero, size: size)
 NSColor.clear.setFill()
 bounds.fill()
 
-let background = NSBezierPath(roundedRect: NSRect(x: 64, y: 64, width: 896, height: 896), xRadius: 210, yRadius: 210)
+let background = NSBezierPath(
+    roundedRect: NSRect(x: 64, y: 64, width: 896, height: 896),
+    xRadius: 210,
+    yRadius: 210
+)
 background.addClip()
+
 let gradient = NSGradient(colors: [
     NSColor(calibratedRed: 0.10, green: 0.33, blue: 0.86, alpha: 1.0),
     NSColor(calibratedRed: 0.32, green: 0.18, blue: 0.72, alpha: 1.0)
 ])!
 gradient.draw(in: bounds, angle: -90)
-
-let glow = NSGradient(starting: NSColor.white.withAlphaComponent(0.16), ending: NSColor.clear)!
-glow.draw(in: NSRect(x: 160, y: 540, width: 700, height: 330), relativeCenterPosition: NSPoint(x: 0.0, y: 0.1))
 
 NSGraphicsContext.current?.saveGraphicsState()
 let shadow = NSShadow()
@@ -104,6 +104,9 @@ guard let tiff = image.tiffRepresentation,
 }
 
 let url = URL(fileURLWithPath: outputPath)
-try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+try FileManager.default.createDirectory(
+    at: url.deletingLastPathComponent(),
+    withIntermediateDirectories: true
+)
 try png.write(to: url)
 print("Generated icon: \(url.path)")
