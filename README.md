@@ -71,7 +71,7 @@ chmod +x scripts/build-app.sh
 ./scripts/build-app.sh
 ```
 
-The build script creates the `.icns` from `AppIcon-Source.png`, builds arm64 release, ad-hoc signs the app, and outputs:
+The build script creates the `.icns` from `AppIcon-Source.jpg`, builds arm64 release, ad-hoc signs the app, and outputs:
 
 - `dist/CardVoice.app`
 - `dist/CardVoice-macOS-arm64.zip`
