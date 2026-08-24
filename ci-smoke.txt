@@ -1,1 +1,2 @@
 CardVoice CI smoke test
+retry after SettingsView fix
