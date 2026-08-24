@@ -13,12 +13,16 @@ swift build -c release --arch arm64
 BIN="$(swift build -c release --arch arm64 --show-bin-path)/CardVoice"
 APP="$ROOT/dist/CardVoice.app"
 CONTENTS="$APP/Contents"
-ICON_SOURCE="$ROOT/AppIcon-Source.jpg"
+ICON_SOURCE="$ROOT/.build/AppIcon-Source.png"
 ICONSET="$ROOT/.build/CardVoice.iconset"
 
 rm -rf "$APP" "$ICONSET"
 mkdir -p "$CONTENTS/MacOS" "$CONTENTS/Resources" "$ROOT/dist" "$ICONSET"
 cp "$BIN" "$CONTENTS/MacOS/CardVoice"
+
+swift "$ROOT/scripts/generate-icon.swift" "$ICON_SOURCE"
+
+test -f "$ICON_SOURCE" || { echo "Icon generation failed."; exit 1; }
 
 make_icon() {
   local px="$1"
