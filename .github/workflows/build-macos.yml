@@ -1,0 +1,52 @@
+name: Build CardVoice macOS
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Package.swift'
+      - 'Sources/**'
+      - 'scripts/**'
+      - 'AppIcon-Source.jpg'
+      - '.github/workflows/build-macos.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify runner
+        run: |
+          uname -a
+          uname -m
+          swift --version
+          test "$(uname -m)" = "arm64"
+
+      - name: Build CardVoice
+        run: |
+          chmod +x scripts/build-app.sh
+          ./scripts/build-app.sh
+
+      - name: Verify app bundle
+        run: |
+          test -d dist/CardVoice.app
+          test -x dist/CardVoice.app/Contents/MacOS/CardVoice
+          test -f dist/CardVoice.app/Contents/Info.plist
+          test -f dist/CardVoice.app/Contents/Resources/CardVoice.icns
+          test -f dist/CardVoice-macOS-arm64.zip
+          file dist/CardVoice.app/Contents/MacOS/CardVoice
+          codesign --verify --deep --strict dist/CardVoice.app
+
+      - name: Upload CardVoice app
+        uses: actions/upload-artifact@v4
+        with:
+          name: CardVoice-macOS-arm64
+          path: dist/CardVoice-macOS-arm64.zip
+          if-no-files-found: error
+          retention-days: 14
