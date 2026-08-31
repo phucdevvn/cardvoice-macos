@@ -1,8 +1,8 @@
 {
   "format": "cardvoice-apkg-manifest-v1",
-  "deckName": "English::CardVoice::Self-made Sentences",
-  "noteType": "CardVoice Cloze v1",
-  "createdAt": 1787569164,
+  "deckName": "English Sentences",
+  "noteType": "CardVoice Cloze",
+  "createdAt": 1787621112,
   "audioPolicy": "full-sentence-back-only",
   "notes": [
     {
@@ -13,9 +13,9 @@
       "targets": ["my mind goes blank"],
       "pattern": "my mind goes blank",
       "meaning": "đầu óc đột nhiên trống rỗng",
-      "audioFilename": "cardvoice_cv001.mp3",
-      "audioFieldIndex": 3,
-      "fieldCount": 5,
+      "audioFilename": "cardvoice_cv001_kokoro.wav",
+      "audioFieldIndex": 2,
+      "fieldCount": 3,
       "clozeNumbers": [1]
     },
     {
@@ -26,36 +26,36 @@
       "targets": ["someone's voice trails off"],
       "pattern": "someone's voice trails off",
       "meaning": "giọng nhỏ dần rồi ngừng lại",
-      "audioFilename": "cardvoice_cv002.mp3",
-      "audioFieldIndex": 3,
-      "fieldCount": 5,
+      "audioFilename": "cardvoice_cv002_kokoro.wav",
+      "audioFieldIndex": 2,
+      "fieldCount": 3,
       "clozeNumbers": [1]
     },
     {
       "id": "cv003",
       "guid": "Z6ONIbQbABA",
       "sentence": "For all we know, getting eight hours of sleep a night could be exactly what keeps us mentally healthy. You can't talk me into sleeping less than that, and you'd probably be better off doing the same.",
-      "clozeText": "{{c1::For all we know}}, getting eight hours of sleep a night could be exactly what keeps us mentally healthy. You can't {{c2::talk me into sleeping less than that}}, and you'd probably {{c3::be better off doing the same}}.",
+      "clozeText": "{{c1::For all we know}}, getting eight hours of sleep a night could be exactly what keeps us mentally healthy. You can't {{c1::talk me into sleeping less than that}}, and you'd probably {{c1::be better off doing the same}}.",
       "targets": ["for all we know", "talk someone into + -ing", "be better off + -ing"],
       "pattern": "for all we know · talk someone into + -ing · be better off + -ing",
       "meaning": "biết đâu / với những gì ta biết thì có thể; thuyết phục ai làm gì; sẽ tốt hơn nếu làm gì",
-      "audioFilename": "cardvoice_cv003.mp3",
-      "audioFieldIndex": 3,
-      "fieldCount": 5,
-      "clozeNumbers": [1, 2, 3]
+      "audioFilename": "cardvoice_cv003_kokoro.wav",
+      "audioFieldIndex": 2,
+      "fieldCount": 3,
+      "clozeNumbers": [1]
     },
     {
       "id": "cv004",
       "guid": "7iI9SG6KC5M",
       "sentence": "I hit a bump while working on the problem and couldn't figure it out. After a while, I figured that it had nothing to do with what I'd been working on—I was tackling the wrong problem.",
-      "clozeText": "I {{c1::hit a bump}} while working on the problem and couldn't figure it out. After a while, {{c2::I figured that}} it {{c3::had nothing to do with}} what I'd been working on—I was tackling the wrong problem.",
+      "clozeText": "I {{c1::hit a bump}} while working on the problem and couldn't figure it out. After a while, {{c1::I figured that}} it {{c1::had nothing to do with}} what I'd been working on—I was tackling the wrong problem.",
       "targets": ["hit a bump", "I figured (that)...", "have nothing to do with + noun/-ing"],
       "pattern": "hit a bump · I figured (that)... · have nothing to do with + noun/-ing",
       "meaning": "gặp trở ngại; tôi nghĩ / đoán / kết luận rằng; không liên quan gì đến",
-      "audioFilename": "cardvoice_cv004.mp3",
-      "audioFieldIndex": 3,
-      "fieldCount": 5,
-      "clozeNumbers": [1, 2, 3]
+      "audioFilename": "cardvoice_cv004_kokoro.wav",
+      "audioFieldIndex": 2,
+      "fieldCount": 3,
+      "clozeNumbers": [1]
     },
     {
       "id": "cv005",
@@ -65,23 +65,23 @@
       "targets": ["run-down"],
       "pattern": "run-down",
       "meaning": "xuống cấp, cũ kỹ, tồi tàn",
-      "audioFilename": "cardvoice_cv005.mp3",
-      "audioFieldIndex": 3,
-      "fieldCount": 5,
+      "audioFilename": "cardvoice_cv005_kokoro.wav",
+      "audioFieldIndex": 2,
+      "fieldCount": 3,
       "clozeNumbers": [1]
     },
     {
       "id": "cv006",
       "guid": "53_FQiZ0llo",
       "sentence": "I stick up for her because she's determined to work things out before everything turns ugly. You're just making a fuss about it without actually solving anything.",
-      "clozeText": "I {{c1::stick up for her}} because she's {{c2::determined to work things out}} before everything turns ugly. You're just {{c3::making a fuss about it}} without actually solving anything.",
+      "clozeText": "I {{c1::stick up for her}} because she's {{c1::determined to work things out}} before everything turns ugly. You're just {{c1::making a fuss about it}} without actually solving anything.",
       "targets": ["stick up for someone", "be determined to + verb", "make a fuss (about/over something)"],
       "pattern": "stick up for someone · be determined to + verb · make a fuss (about/over something)",
       "meaning": "bênh vực ai; quyết tâm làm gì; làm ầm / làm quá chuyện gì",
-      "audioFilename": "cardvoice_cv006.mp3",
-      "audioFieldIndex": 3,
-      "fieldCount": 5,
-      "clozeNumbers": [1, 2, 3]
+      "audioFilename": "cardvoice_cv006_kokoro.wav",
+      "audioFieldIndex": 2,
+      "fieldCount": 3,
+      "clozeNumbers": [1]
     },
     {
       "id": "cv007",
@@ -91,9 +91,9 @@
       "targets": ["the prospect of + noun/-ing"],
       "pattern": "the prospect of + noun/-ing",
       "meaning": "viễn cảnh / khả năng sẽ làm gì",
-      "audioFilename": "cardvoice_cv007.mp3",
-      "audioFieldIndex": 3,
-      "fieldCount": 5,
+      "audioFilename": "cardvoice_cv007_kokoro.wav",
+      "audioFieldIndex": 2,
+      "fieldCount": 3,
       "clozeNumbers": [1]
     }
   ]

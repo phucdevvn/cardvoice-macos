@@ -1,13 +1,13 @@
 #separator:Tab
 #html:true
-#notetype:CardVoice Cloze v1
-#deck:English::CardVoice::Self-made Sentences
+#notetype:CardVoice Cloze
+#deck:English Sentences
 #tags:cardvoice selfmade
-#columns:Text	Pattern	Meaning	Audio	CardVoiceID
-When I try to think and speak in English, {{c1::my mind suddenly goes blank}}. I can't help but remain silent.	my mind goes blank	đầu óc đột nhiên trống rỗng		cv001
-As I ran away from the dark alley, I heard {{c1::someone's voice trail off}} behind me.	someone's voice trails off	giọng nhỏ dần rồi ngừng lại		cv002
-{{c1::For all we know}}, getting eight hours of sleep a night could be exactly what keeps us mentally healthy. You can't {{c2::talk me into sleeping less than that}}, and you'd probably {{c3::be better off doing the same}}.	for all we know · talk someone into + -ing · be better off + -ing	biết đâu / với những gì ta biết thì có thể; thuyết phục ai làm gì; sẽ tốt hơn nếu làm gì		cv003
-I {{c1::hit a bump}} while working on the problem and couldn't figure it out. After a while, {{c2::I figured that}} it {{c3::had nothing to do with}} what I'd been working on—I was tackling the wrong problem.	hit a bump · I figured (that)... · have nothing to do with + noun/-ing	gặp trở ngại; tôi nghĩ / đoán / kết luận rằng; không liên quan gì đến		cv004
-The building looked so {{c1::run-down}} that we decided to repaint it and repair the walls.	run-down	xuống cấp, cũ kỹ, tồi tàn		cv005
-I {{c1::stick up for her}} because she's {{c2::determined to work things out}} before everything turns ugly. You're just {{c3::making a fuss about it}} without actually solving anything.	stick up for someone · be determined to + verb · make a fuss (about/over something)	bênh vực ai; quyết tâm làm gì; làm ầm / làm quá chuyện gì		cv006
-{{c1::The prospect of becoming a teacher}} sends chills down my spine. Just a couple of months ago, I didn't know what to do with my career because programming wasn't fun anymore and AI was already doing a lot of the work.	the prospect of + noun/-ing	viễn cảnh / khả năng sẽ làm gì		cv007
+#columns:Sentence	Notes	Audio
+When I try to think and speak in English, {{c1::my mind suddenly goes blank}}. I can't help but remain silent.	my mind goes blank — đầu óc đột nhiên trống rỗng	<!-- empty -->
+As I ran away from the dark alley, I heard {{c1::someone's voice trail off}} behind me.	someone's voice trails off — giọng nhỏ dần rồi ngừng lại	<!-- empty -->
+{{c1::For all we know}}, getting eight hours of sleep a night could be exactly what keeps us mentally healthy. You can't {{c1::talk me into sleeping less than that}}, and you'd probably {{c1::be better off doing the same}}.	for all we know — biết đâu / với những gì ta biết thì có thể<br>talk someone into + -ing — thuyết phục ai làm gì<br>be better off + -ing — sẽ tốt hơn nếu làm gì	<!-- empty -->
+I {{c1::hit a bump}} while working on the problem and couldn't figure it out. After a while, {{c1::I figured that}} it {{c1::had nothing to do with}} what I'd been working on—I was tackling the wrong problem.	hit a bump — gặp trở ngại<br>I figured (that)... — tôi nghĩ / đoán / kết luận rằng<br>have nothing to do with + noun/-ing — không liên quan gì đến	<!-- empty -->
+The building looked so {{c1::run-down}} that we decided to repaint it and repair the walls.	run-down — xuống cấp, cũ kỹ, tồi tàn	<!-- empty -->
+I {{c1::stick up for her}} because she's {{c1::determined to work things out}} before everything turns ugly. You're just {{c1::making a fuss about it}} without actually solving anything.	stick up for someone — bênh vực ai<br>be determined to + verb — quyết tâm làm gì<br>make a fuss (about/over something) — làm ầm / làm quá chuyện gì	<!-- empty -->
+{{c1::The prospect of becoming a teacher}} sends chills down my spine. Just a couple of months ago, I didn't know what to do with my career because programming wasn't fun anymore and AI was already doing a lot of the work.	the prospect of + noun/-ing — viễn cảnh / khả năng sẽ làm gì	<!-- empty -->

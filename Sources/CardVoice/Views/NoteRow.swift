@@ -17,20 +17,16 @@ struct NoteRow: View {
                     .font(.caption).foregroundStyle(hasAudio ? .green : .secondary)
             }
             Text(note.sentence).font(.body).textSelection(.enabled)
-            HStack(spacing: 8) {
-                Text("Pattern:").font(.caption.bold())
-                Text(note.pattern).font(.caption).foregroundStyle(.secondary)
-            }
-            HStack(spacing: 8) {
-                Text("Meaning:").font(.caption.bold())
-                Text(note.meaning).font(.caption).foregroundStyle(.secondary)
+            HStack(alignment: .top, spacing: 8) {
+                Text("Notes:").font(.caption.bold())
+                Text(note.combinedNotes).font(.caption).foregroundStyle(.secondary)
             }
             HStack {
-                Button(hasAudio ? "Regenerate" : "Generate ElevenLabs", action: generate).disabled(isWorking)
+                Button(hasAudio ? "Regenerate" : "Generate Offline", action: generate).disabled(isWorking)
                 Button("Play", action: play).disabled(!hasAudio)
                 Button("macOS Preview", action: systemSpeak)
                 Spacer()
-                Text(note.audioFilename).font(.caption.monospaced()).foregroundStyle(.secondary)
+                Text(note.resolvedAudioFilename).font(.caption.monospaced()).foregroundStyle(.secondary)
             }
         }
         .padding(14)

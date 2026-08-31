@@ -21,58 +21,58 @@ struct CardVoiceNote: Codable, Identifiable, Hashable {
     let audioFieldIndex: Int
     let fieldCount: Int
     let clozeNumbers: [Int]
+
+    var resolvedAudioFilename: String {
+        let supplied = audioFilename.trimmingCharacters(in: .whitespacesAndNewlines)
+        let base: String
+        if AudioStore.isSafeFilename(supplied) {
+            base = URL(fileURLWithPath: supplied).deletingPathExtension().lastPathComponent
+        } else {
+            let safeID = id.unicodeScalars
+                .map { CharacterSet.alphanumerics.contains($0) || $0 == "-" || $0 == "_" ? Character(String($0)) : "_" }
+            let identifier = String(safeID).trimmingCharacters(in: CharacterSet(charactersIn: "_"))
+            base = "cardvoice_\(identifier.isEmpty ? "note" : identifier)"
+        }
+
+        // A distinct offline filename prevents old cloud-generated cache entries
+        // from being mistaken for current Kokoro audio after upgrading CardVoice.
+        return "\(base.hasSuffix("_kokoro") ? base : base + "_kokoro").wav"
+    }
+
+    var combinedNotesLines: [String] {
+        let patterns = pattern.components(separatedBy: " · ").map(trimmed).filter { !$0.isEmpty }
+        let meanings = meaning.components(separatedBy: "; ").map(trimmed).filter { !$0.isEmpty }
+
+        guard patterns.count == meanings.count, !patterns.isEmpty else {
+            let fallback = [pattern, meaning].map(trimmed).filter { !$0.isEmpty }.joined(separator: " — ")
+            return fallback.isEmpty ? [] : [fallback]
+        }
+
+        return zip(patterns, meanings).map { "\($0) — \($1)" }
+    }
+
+    var combinedNotes: String {
+        combinedNotesLines.joined(separator: "\n")
+    }
+
+    var combinedNotesHTML: String {
+        combinedNotesLines.map(htmlEscaped).joined(separator: "<br>")
+    }
+
+    private func trimmed(_ value: String) -> String {
+        value.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func htmlEscaped(_ value: String) -> String {
+        value
+            .replacingOccurrences(of: "&", with: "&amp;")
+            .replacingOccurrences(of: "<", with: "&lt;")
+            .replacingOccurrences(of: ">", with: "&gt;")
+            .replacingOccurrences(of: "\"", with: "&quot;")
+    }
 }
 
 struct LoadedPackage: Hashable {
     let sourceURL: URL
     let manifest: CardVoiceManifest
-}
-
-struct APIKeyProfile: Identifiable, Codable, Hashable {
-    var id: UUID
-    var label: String
-    var keychainAccount: String
-
-    init(id: UUID = UUID(), label: String, keychainAccount: String? = nil) {
-        self.id = id
-        self.label = label
-        self.keychainAccount = keychainAccount ?? "elevenlabs-\(id.uuidString)"
-    }
-}
-
-struct ElevenVoice: Codable, Identifiable, Hashable {
-    let voice_id: String
-    let name: String?
-    let category: String?
-    let labels: [String: String]?
-    let preview_url: String?
-
-    var id: String { voice_id }
-    var displayName: String { name ?? voice_id }
-    var subtitle: String {
-        [labels?["accent"], labels?["gender"], labels?["description"]]
-            .compactMap { $0 }
-            .joined(separator: " · ")
-    }
-}
-
-struct VoiceSearchResponse: Codable {
-    let voices: [ElevenVoice]
-    let has_more: Bool?
-    let total_count: Int?
-    let next_page_token: String?
-}
-
-struct ElevenSubscription: Codable {
-    let tier: String?
-    let character_count: Int?
-    let character_limit: Int?
-    let next_character_count_reset_unix: Int?
-
-    var usageDescription: String {
-        guard let used = character_count, let limit = character_limit else {
-            return tier ?? "Unknown plan"
-        }
-        return "\(tier ?? "plan"): \(used) / \(limit) characters"
-    }
 }

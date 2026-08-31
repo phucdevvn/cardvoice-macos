@@ -5,118 +5,94 @@ import UniformTypeIdentifiers
 @MainActor
 final class AppViewModel: ObservableObject {
     @Published var package: LoadedPackage?
-    @Published var keyProfiles: [APIKeyProfile] = []
-    @Published var selectedKeyID: UUID?
-    @Published var voices: [ElevenVoice] = []
-    @Published var selectedVoiceID: String = ""
-    @Published var voiceSearch: String = "Lawrence"
-    @Published var modelID: String = "eleven_multilingual_v2"
-    @Published var outputFormat: String = "mp3_44100_128"
-    @Published var status: String = "Import a CardVoice-ready Anki deck to begin."
+    @Published var status: String = "Install the offline Kokoro voice model, then import an Anki deck."
     @Published var isWorking = false
-    @Published var subscriptionDescription: String = ""
+    @Published var isInstallingModel = false
     @Published var completedCount = 0
+    @Published var kokoroVoiceID = 4
+    @Published var kokoroSpeed = 0.95
+    @Published var kokoroModelInstalled = false
 
-    private let client = ElevenLabsClient()
     private let audioPlayer = AudioPlayerService()
     let systemSpeech = SystemSpeechService()
 
     private enum Keys {
-        static let profiles = "cardvoice.keys.profiles.v2"
-        static let selectedKey = "cardvoice.keys.selected.v2"
-        static let selectedVoice = "cardvoice.voice.selected.v2"
-        static let modelID = "cardvoice.model.selected.v2"
-        static let outputFormat = "cardvoice.output.format.v1"
+        static let voiceID = "cardvoice.kokoro.voice.v1"
+        static let speed = "cardvoice.kokoro.speed.v1"
     }
 
     init() {
-        if let data = UserDefaults.standard.data(forKey: Keys.profiles),
-           let decoded = try? JSONDecoder().decode([APIKeyProfile].self, from: data) { keyProfiles = decoded }
-        if let raw = UserDefaults.standard.string(forKey: Keys.selectedKey) { selectedKeyID = UUID(uuidString: raw) }
-        selectedVoiceID = UserDefaults.standard.string(forKey: Keys.selectedVoice) ?? ""
-        modelID = UserDefaults.standard.string(forKey: Keys.modelID) ?? "eleven_multilingual_v2"
-        outputFormat = UserDefaults.standard.string(forKey: Keys.outputFormat) ?? "mp3_44100_128"
+        let savedVoice = UserDefaults.standard.object(forKey: Keys.voiceID) as? Int
+        kokoroVoiceID = savedVoice.flatMap { saved in
+            KokoroVoice.all.contains { $0.id == saved } ? saved : nil
+        } ?? 4
+        let savedSpeed = UserDefaults.standard.object(forKey: Keys.speed) as? Double
+        kokoroSpeed = savedSpeed.map { min(max($0, 0.75), 1.25) } ?? 0.95
+        kokoroModelInstalled = KokoroModelStore.isInstalled()
         refreshCompletedCount()
-    }
-
-    var notes: [CardVoiceNote] { package?.manifest.notes ?? [] }
-    var selectedProfile: APIKeyProfile? {
-        guard let selectedKeyID else { return keyProfiles.first }
-        return keyProfiles.first { $0.id == selectedKeyID }
-    }
-    var activeAPIKey: String? {
-        guard let profile = selectedProfile else { return nil }
-        return KeychainStore.read(account: profile.keychainAccount)
-    }
-
-    func persist() {
-        if let data = try? JSONEncoder().encode(keyProfiles) { UserDefaults.standard.set(data, forKey: Keys.profiles) }
-        UserDefaults.standard.set(selectedKeyID?.uuidString, forKey: Keys.selectedKey)
-        UserDefaults.standard.set(selectedVoiceID, forKey: Keys.selectedVoice)
-        UserDefaults.standard.set(modelID, forKey: Keys.modelID)
-        UserDefaults.standard.set(outputFormat, forKey: Keys.outputFormat)
-    }
-
-    func addKey(label: String, secret: String) throws {
-        let profile = APIKeyProfile(label: label.isEmpty ? "ElevenLabs" : label)
-        try KeychainStore.save(secret, account: profile.keychainAccount)
-        keyProfiles.append(profile); selectedKeyID = profile.id; persist()
-    }
-
-    func importElevenLabsEnvironment() {
-        let panel = NSOpenPanel()
-        panel.title = "Import ElevenLabs .env"
-        panel.message = "API keys will be copied into macOS Keychain. CardVoice does not keep a plaintext copy of the file."
-        panel.canChooseDirectories = false
-        panel.allowsMultipleSelection = false
-        panel.allowedFileTypes = ["env", "txt"]
-        panel.allowsOtherFileTypes = true
-        guard panel.runModal() == .OK, let url = panel.url else { return }
-
-        do {
-            let text = try String(contentsOf: url, encoding: .utf8)
-            let imported = ElevenLabsEnvironmentImport.parse(text)
-            guard !imported.apiKeys.isEmpty || imported.voiceID != nil || imported.modelID != nil || imported.outputFormat != nil else {
-                status = "No supported ElevenLabs settings were found in that file."
-                return
-            }
-
-            let existingSecrets = Set(keyProfiles.compactMap { KeychainStore.read(account: $0.keychainAccount) })
-            var added = 0
-            for (index, pair) in imported.apiKeys.enumerated() where !existingSecrets.contains(pair.value) {
-                let suffix = pair.name.split(separator: "_").last.flatMap { Int($0) }
-                let label = suffix.map { "API Key \($0)" } ?? "API Key \(index + 1)"
-                try addKey(label: label, secret: pair.value)
-                added += 1
-            }
-
-            if let voiceID = imported.voiceID { selectedVoiceID = voiceID }
-            if let modelID = imported.modelID { self.modelID = modelID }
-            if let outputFormat = imported.outputFormat { self.outputFormat = outputFormat }
-            if selectedKeyID == nil { selectedKeyID = keyProfiles.first?.id }
-            persist()
-
-            let duplicateCount = imported.apiKeys.count - added
-            var summary = "Imported \(added) new API key\(added == 1 ? "" : "s")"
-            if duplicateCount > 0 { summary += "; skipped \(duplicateCount) duplicate\(duplicateCount == 1 ? "" : "s")" }
-            if imported.voiceID != nil || imported.modelID != nil || imported.outputFormat != nil { summary += "; applied voice/model/output settings" }
-            status = summary + "."
-        } catch {
-            status = "Could not import .env: \(error.localizedDescription)"
+        if kokoroModelInstalled {
+            status = "Kokoro is installed. Import a CardVoice-ready Anki deck to begin."
         }
     }
 
-    func deleteKey(_ profile: APIKeyProfile) {
-        KeychainStore.delete(account: profile.keychainAccount)
-        keyProfiles.removeAll { $0.id == profile.id }
-        if selectedKeyID == profile.id { selectedKeyID = keyProfiles.first?.id }
-        persist()
+    var notes: [CardVoiceNote] { package?.manifest.notes ?? [] }
+    var selectedKokoroVoice: KokoroVoice {
+        KokoroVoice.all.first { $0.id == kokoroVoiceID } ?? KokoroVoice.all[4]
+    }
+
+    func persist() {
+        UserDefaults.standard.set(kokoroVoiceID, forKey: Keys.voiceID)
+        UserDefaults.standard.set(kokoroSpeed, forKey: Keys.speed)
+    }
+
+    func installKokoroModel() async {
+        guard !isWorking else { return }
+        isWorking = true
+        isInstallingModel = true
+        status = "Downloading the Kokoro offline model (about 305 MB)…"
+        defer {
+            isWorking = false
+            isInstallingModel = false
+        }
+
+        do {
+            _ = try await KokoroModelStore.install()
+            kokoroModelInstalled = true
+            status = "Kokoro installed. Voice generation is now fully offline."
+        } catch {
+            kokoroModelInstalled = KokoroModelStore.isInstalled()
+            status = error.localizedDescription
+        }
+    }
+
+    func previewKokoroVoice() async {
+        guard kokoroModelInstalled else {
+            status = "Install the offline Kokoro model first."
+            return
+        }
+        guard !isWorking else { return }
+        isWorking = true
+        status = "Generating a local preview with \(selectedKokoroVoice.name)…"
+        defer { isWorking = false }
+
+        do {
+            let data = try await KokoroOfflineService.generateWAV(
+                text: "When I speak English, I want my voice to sound clear, calm, and natural.",
+                voiceID: kokoroVoiceID,
+                speed: kokoroSpeed
+            )
+            let url = try AudioStore.save(data, filename: "cardvoice_kokoro_preview.wav")
+            try audioPlayer.play(url: url)
+            status = "Playing \(selectedKokoroVoice.displayName) at \(kokoroSpeed.formatted(.number.precision(.fractionLength(2))))×."
+        } catch {
+            status = error.localizedDescription
+        }
     }
 
     func importAPKG() {
         let panel = NSOpenPanel()
         panel.title = "Import CardVoice-ready Anki deck"
-        panel.allowedFileTypes = ["apkg"]
+        if let type = UTType(filenameExtension: "apkg") { panel.allowedContentTypes = [type] }
         panel.canChooseDirectories = false
         panel.allowsMultipleSelection = false
         guard panel.runModal() == .OK, let url = panel.url else { return }
@@ -124,82 +100,116 @@ final class AppViewModel: ObservableObject {
             package = try APKGService.load(url: url)
             refreshCompletedCount()
             status = "Loaded \(notes.count) notes from \(url.lastPathComponent)."
-        } catch { status = error.localizedDescription }
+        } catch {
+            status = error.localizedDescription
+        }
     }
 
-    func fetchVoices() async {
-        guard let key = activeAPIKey else { status = "Add an ElevenLabs API key first."; return }
-        isWorking = true; defer { isWorking = false }
-        do {
-            voices = try await client.voices(apiKey: key, search: voiceSearch)
-            if selectedVoiceID.isEmpty, let first = voices.first { selectedVoiceID = first.voice_id }
-            status = voices.isEmpty ? "No voices found." : "Loaded \(voices.count) voices."
-            persist()
-        } catch { status = error.localizedDescription }
+    func hasAudio(_ note: CardVoiceNote) -> Bool {
+        AudioStore.existingURL(filename: note.resolvedAudioFilename) != nil
     }
-
-    func refreshUsage() async {
-        guard let key = activeAPIKey else { status = "Add an ElevenLabs API key first."; return }
-        do {
-            let sub = try await client.subscription(apiKey: key)
-            subscriptionDescription = sub.usageDescription
-            status = "Usage refreshed."
-        } catch { status = error.localizedDescription }
-    }
-
-    func hasAudio(_ note: CardVoiceNote) -> Bool { AudioStore.existingURL(filename: note.audioFilename) != nil }
 
     func generateAudio(for note: CardVoiceNote) async -> Bool {
-        guard let key = activeAPIKey else { status = "Add an ElevenLabs API key first."; return false }
-        guard !selectedVoiceID.isEmpty else { status = "Choose a voice first."; return false }
-        isWorking = true; defer { isWorking = false }
+        guard kokoroModelInstalled else {
+            status = "Install the offline Kokoro model in Settings first."
+            return false
+        }
+        guard !isWorking else { return false }
+        isWorking = true
+        let filename = note.resolvedAudioFilename
+        status = "Generating \(filename) locally with Kokoro…"
+        defer { isWorking = false }
+
         do {
-            status = "Generating \(note.audioFilename)…"
-            let data = try await client.generateSpeech(text: note.sentence, apiKey: key, voiceID: selectedVoiceID, modelID: modelID, outputFormat: outputFormat)
-            _ = try AudioStore.save(data, filename: note.audioFilename)
+            let data = try await KokoroOfflineService.generateWAV(
+                text: note.sentence,
+                voiceID: kokoroVoiceID,
+                speed: kokoroSpeed
+            )
+            _ = try AudioStore.save(data, filename: filename)
             refreshCompletedCount()
-            status = "Generated \(note.audioFilename)."
+            status = "Generated \(filename) locally."
             return true
         } catch {
-            status = error.localizedDescription + " Select another authorized key manually if appropriate, then resume."
+            status = error.localizedDescription
             return false
         }
     }
 
     func generateMissingAudio() async {
         guard package != nil else { status = "Import an .apkg first."; return }
+        guard kokoroModelInstalled else { status = "Install the offline Kokoro model first."; return }
         for note in notes where !hasAudio(note) {
             let ok = await generateAudio(for: note)
             if !ok { break }
         }
         refreshCompletedCount()
-        if completedCount == notes.count && !notes.isEmpty { status = "All sentence audio is ready." }
+        if completedCount == notes.count, !notes.isEmpty {
+            status = "All sentence audio is ready."
+        }
+    }
+
+    func regenerateAllAudio() async {
+        guard package != nil else { status = "Import an .apkg first."; return }
+        guard kokoroModelInstalled else { status = "Install the offline Kokoro model first."; return }
+        guard !notes.isEmpty else { status = "The imported deck has no notes."; return }
+
+        let total = notes.count
+        var regenerated = 0
+        for note in notes {
+            let ok = await generateAudio(for: note)
+            guard ok else {
+                let failure = status
+                refreshCompletedCount()
+                status = "Regeneration stopped after \(regenerated)/\(total) audio files. \(failure)"
+                return
+            }
+            regenerated += 1
+        }
+
+        refreshCompletedCount()
+        status = "Regenerated all \(total) sentence audio files locally."
     }
 
     func playAudio(_ note: CardVoiceNote) {
-        guard let url = AudioStore.existingURL(filename: note.audioFilename) else { return }
-        do { try audioPlayer.play(url: url) } catch { status = error.localizedDescription }
+        guard let url = AudioStore.existingURL(filename: note.resolvedAudioFilename) else { return }
+        do { try audioPlayer.play(url: url) }
+        catch { status = error.localizedDescription }
     }
 
     func exportAudioZip() {
         guard let package else { status = "Import an .apkg first."; return }
         guard completedCount == notes.count else { status = "Generate all audio before exporting."; return }
-        let panel = NSSavePanel(); panel.title = "Export generated audio ZIP"; panel.nameFieldStringValue = "CardVoice-Audio.zip"; panel.allowedFileTypes = ["zip"]
+        let panel = NSSavePanel()
+        panel.title = "Export generated audio ZIP"
+        panel.nameFieldStringValue = "CardVoice-Audio.zip"
+        panel.allowedContentTypes = [.zip]
         guard panel.runModal() == .OK, let url = panel.url else { return }
-        do { try APKGService.exportAudioZip(package: package, destination: url); status = "Exported \(url.lastPathComponent)." }
-        catch { status = error.localizedDescription }
+        do {
+            try APKGService.exportAudioZip(package: package, destination: url)
+            status = "Exported \(url.lastPathComponent)."
+        } catch {
+            status = error.localizedDescription
+        }
     }
 
     func exportAnkiWithAudio() {
         guard let package else { status = "Import an .apkg first."; return }
         guard completedCount == notes.count else { status = "Generate all audio before exporting."; return }
-        let panel = NSSavePanel(); panel.title = "Export Anki deck with audio"; panel.nameFieldStringValue = package.sourceURL.deletingPathExtension().lastPathComponent + "-audio.apkg"; panel.allowedFileTypes = ["apkg"]
+        let panel = NSSavePanel()
+        panel.title = "Export Anki deck with audio"
+        panel.nameFieldStringValue = package.sourceURL.deletingPathExtension().lastPathComponent + "-audio.apkg"
+        if let type = UTType(filenameExtension: "apkg") { panel.allowedContentTypes = [type] }
         guard panel.runModal() == .OK, let url = panel.url else { return }
-        do { try APKGService.exportAnkiWithAudio(package: package, destination: url); status = "Exported Anki deck with embedded audio." }
-        catch { status = error.localizedDescription }
+        do {
+            try APKGService.exportAnkiWithAudio(package: package, destination: url)
+            status = "Exported Anki deck with embedded offline audio."
+        } catch {
+            status = error.localizedDescription
+        }
     }
 
     private func refreshCompletedCount() {
-        completedCount = notes.filter { AudioStore.existingURL(filename: $0.audioFilename) != nil }.count
+        completedCount = notes.filter { AudioStore.existingURL(filename: $0.resolvedAudioFilename) != nil }.count
     }
 }

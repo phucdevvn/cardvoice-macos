@@ -24,26 +24,52 @@ final class SystemSpeechService {
 }
 
 enum AudioStore {
+    enum StoreError: LocalizedError {
+        case invalidFilename
+
+        var errorDescription: String? {
+            "The audio filename is empty or unsafe. Reimport a CardVoice-ready deck."
+        }
+    }
+
     static func folder() throws -> URL {
         let base = try FileManager.default.url(
             for: .applicationSupportDirectory,
             in: .userDomainMask,
             appropriateFor: nil,
             create: true
-        ).appending(path: "CardVoice/Audio", directoryHint: .isDirectory)
+        )
+            .appending(path: "CardVoice", directoryHint: .isDirectory)
+            .appending(path: "Audio", directoryHint: .isDirectory)
         try FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
         return base
     }
 
     static func save(_ data: Data, filename: String) throws -> URL {
+        guard isSafeFilename(filename) else { throw StoreError.invalidFilename }
         let url = try folder().appending(path: filename)
         try data.write(to: url, options: .atomic)
         return url
     }
 
     static func existingURL(filename: String) -> URL? {
+        guard isSafeFilename(filename) else { return nil }
         guard let base = try? folder() else { return nil }
         let url = base.appending(path: filename)
-        return FileManager.default.fileExists(atPath: url.path) ? url : nil
+        guard let values = try? url.resourceValues(forKeys: [.isRegularFileKey]), values.isRegularFile == true else {
+            return nil
+        }
+        return url
+    }
+
+    static func isSafeFilename(_ filename: String) -> Bool {
+        guard !filename.isEmpty,
+              filename == URL(fileURLWithPath: filename).lastPathComponent,
+              filename != ".",
+              filename != "..",
+              ["mp3", "wav"].contains(URL(fileURLWithPath: filename).pathExtension.lowercased()) else {
+            return false
+        }
+        return true
     }
 }
