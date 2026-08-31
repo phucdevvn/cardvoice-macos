@@ -9,23 +9,18 @@ final class AppViewModel: ObservableObject {
     @Published var isWorking = false
     @Published var isInstallingModel = false
     @Published var completedCount = 0
-    @Published var kokoroVoiceID = 4
     @Published var kokoroSpeed = 0.95
     @Published var kokoroModelInstalled = false
+    @Published private(set) var voiceAssignments: [String: Int] = [:]
 
     private let audioPlayer = AudioPlayerService()
     let systemSpeech = SystemSpeechService()
 
     private enum Keys {
-        static let voiceID = "cardvoice.kokoro.voice.v1"
         static let speed = "cardvoice.kokoro.speed.v1"
     }
 
     init() {
-        let savedVoice = UserDefaults.standard.object(forKey: Keys.voiceID) as? Int
-        kokoroVoiceID = savedVoice.flatMap { saved in
-            KokoroVoice.all.contains { $0.id == saved } ? saved : nil
-        } ?? 4
         let savedSpeed = UserDefaults.standard.object(forKey: Keys.speed) as? Double
         kokoroSpeed = savedSpeed.map { min(max($0, 0.75), 1.25) } ?? 0.95
         kokoroModelInstalled = KokoroModelStore.isInstalled()
@@ -36,12 +31,17 @@ final class AppViewModel: ObservableObject {
     }
 
     var notes: [CardVoiceNote] { package?.manifest.notes ?? [] }
-    var selectedKokoroVoice: KokoroVoice {
-        KokoroVoice.all.first { $0.id == kokoroVoiceID } ?? KokoroVoice.all[4]
+
+    func assignedKokoroVoice(for note: CardVoiceNote) -> KokoroVoice {
+        let voiceID = voiceAssignments[KokoroVoiceAssignment.key(for: note)] ?? KokoroVoice.all[0].id
+        return KokoroVoice.all.first { $0.id == voiceID } ?? KokoroVoice.all[0]
+    }
+
+    func audioFilename(for note: CardVoiceNote) -> String {
+        note.kokoroAudioFilename(voiceID: assignedKokoroVoice(for: note).id)
     }
 
     func persist() {
-        UserDefaults.standard.set(kokoroVoiceID, forKey: Keys.voiceID)
         UserDefaults.standard.set(kokoroSpeed, forKey: Keys.speed)
     }
 
@@ -65,25 +65,25 @@ final class AppViewModel: ObservableObject {
         }
     }
 
-    func previewKokoroVoice() async {
+    func previewKokoroVoice(_ voice: KokoroVoice) async {
         guard kokoroModelInstalled else {
             status = "Install the offline Kokoro model first."
             return
         }
         guard !isWorking else { return }
         isWorking = true
-        status = "Generating a local preview with \(selectedKokoroVoice.name)…"
+        status = "Generating a local preview with \(voice.name)…"
         defer { isWorking = false }
 
         do {
             let data = try await KokoroOfflineService.generateWAV(
                 text: "When I speak English, I want my voice to sound clear, calm, and natural.",
-                voiceID: kokoroVoiceID,
+                voiceID: voice.id,
                 speed: kokoroSpeed
             )
-            let url = try AudioStore.save(data, filename: "cardvoice_kokoro_preview.wav")
+            let url = try AudioStore.save(data, filename: "cardvoice_kokoro_preview_v\(voice.id).wav")
             try audioPlayer.play(url: url)
-            status = "Playing \(selectedKokoroVoice.displayName) at \(kokoroSpeed.formatted(.number.precision(.fractionLength(2))))×."
+            status = "Playing \(voice.displayName) at \(kokoroSpeed.formatted(.number.precision(.fractionLength(2))))×."
         } catch {
             status = error.localizedDescription
         }
@@ -98,15 +98,16 @@ final class AppViewModel: ObservableObject {
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
             package = try APKGService.load(url: url)
+            refreshVoiceAssignments()
             refreshCompletedCount()
-            status = "Loaded \(notes.count) notes from \(url.lastPathComponent)."
+            status = "Loaded \(notes.count) notes with a balanced four-voice mix from \(url.lastPathComponent)."
         } catch {
             status = error.localizedDescription
         }
     }
 
     func hasAudio(_ note: CardVoiceNote) -> Bool {
-        AudioStore.existingURL(filename: note.resolvedAudioFilename) != nil
+        AudioStore.existingURL(filename: audioFilename(for: note)) != nil
     }
 
     func generateAudio(for note: CardVoiceNote) async -> Bool {
@@ -116,19 +117,20 @@ final class AppViewModel: ObservableObject {
         }
         guard !isWorking else { return false }
         isWorking = true
-        let filename = note.resolvedAudioFilename
-        status = "Generating \(filename) locally with Kokoro…"
+        let voice = assignedKokoroVoice(for: note)
+        let filename = audioFilename(for: note)
+        status = "Generating \(filename) locally with \(voice.name)…"
         defer { isWorking = false }
 
         do {
             let data = try await KokoroOfflineService.generateWAV(
                 text: note.sentence,
-                voiceID: kokoroVoiceID,
+                voiceID: voice.id,
                 speed: kokoroSpeed
             )
             _ = try AudioStore.save(data, filename: filename)
             refreshCompletedCount()
-            status = "Generated \(filename) locally."
+            status = "Generated \(filename) with \(voice.displayName)."
             return true
         } catch {
             status = error.localizedDescription
@@ -172,7 +174,7 @@ final class AppViewModel: ObservableObject {
     }
 
     func playAudio(_ note: CardVoiceNote) {
-        guard let url = AudioStore.existingURL(filename: note.resolvedAudioFilename) else { return }
+        guard let url = AudioStore.existingURL(filename: audioFilename(for: note)) else { return }
         do { try audioPlayer.play(url: url) }
         catch { status = error.localizedDescription }
     }
@@ -186,7 +188,11 @@ final class AppViewModel: ObservableObject {
         panel.allowedContentTypes = [.zip]
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
-            try APKGService.exportAudioZip(package: package, destination: url)
+            try APKGService.exportAudioZip(
+                package: package,
+                destination: url,
+                audioFilename: audioFilename(for:)
+            )
             status = "Exported \(url.lastPathComponent)."
         } catch {
             status = error.localizedDescription
@@ -202,7 +208,11 @@ final class AppViewModel: ObservableObject {
         if let type = UTType(filenameExtension: "apkg") { panel.allowedContentTypes = [type] }
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
-            try APKGService.exportAnkiWithAudio(package: package, destination: url)
+            try APKGService.exportAnkiWithAudio(
+                package: package,
+                destination: url,
+                audioFilename: audioFilename(for:)
+            )
             status = "Exported Anki deck with embedded offline audio."
         } catch {
             status = error.localizedDescription
@@ -210,6 +220,14 @@ final class AppViewModel: ObservableObject {
     }
 
     private func refreshCompletedCount() {
-        completedCount = notes.filter { AudioStore.existingURL(filename: $0.resolvedAudioFilename) != nil }.count
+        completedCount = notes.filter { AudioStore.existingURL(filename: audioFilename(for: $0)) != nil }.count
+    }
+
+    private func refreshVoiceAssignments() {
+        voiceAssignments = KokoroVoiceAssignment.make(notes: notes) { note in
+            KokoroVoice.all.first { voice in
+                AudioStore.existingURL(filename: note.kokoroAudioFilename(voiceID: voice.id)) != nil
+            }?.id
+        }
     }
 }

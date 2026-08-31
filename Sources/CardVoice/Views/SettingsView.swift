@@ -10,7 +10,7 @@ struct SettingsView: View {
             voiceSection
         }
         .formStyle(.grouped)
-        .frame(width: 660, height: 460)
+        .frame(width: 660, height: 560)
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button("Done") {
@@ -48,10 +48,23 @@ struct SettingsView: View {
     }
 
     private var voiceSection: some View {
-        Section("Voice") {
-            Picker("Kokoro voice", selection: $vm.kokoroVoiceID) {
-                ForEach(KokoroVoice.all) { voice in
-                    Text(voice.displayName).tag(voice.id)
+        Section("Automatic four-voice mix") {
+            Text("Cards are distributed pseudo-randomly and as evenly as possible across these fixed voices. Existing voice-specific audio keeps its assignment.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            ForEach(KokoroVoice.all) { voice in
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(voice.name).fontWeight(.medium)
+                        Text(voice.roleLabel).font(.caption).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Button("Preview") {
+                        vm.persist()
+                        Task { await vm.previewKokoroVoice(voice) }
+                    }
+                    .disabled(!vm.kokoroModelInstalled || vm.isWorking)
                 }
             }
 
@@ -63,16 +76,6 @@ struct SettingsView: View {
                     .frame(width: 46, alignment: .trailing)
             }
 
-            HStack {
-                Button("Preview Voice") {
-                    vm.persist()
-                    Task { await vm.previewKokoroVoice() }
-                }
-                .disabled(!vm.kokoroModelInstalled || vm.isWorking)
-                Text("Generate a short local preview before processing the deck.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
         }
     }
 }

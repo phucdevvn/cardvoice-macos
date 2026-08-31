@@ -39,6 +39,13 @@ struct CardVoiceNote: Codable, Identifiable, Hashable {
         return "\(base.hasSuffix("_kokoro") ? base : base + "_kokoro").wav"
     }
 
+    func kokoroAudioFilename(voiceID: Int) -> String {
+        let base = URL(fileURLWithPath: resolvedAudioFilename)
+            .deletingPathExtension()
+            .lastPathComponent
+        return "\(base)_v\(voiceID).wav"
+    }
+
     var combinedNotesLines: [String] {
         let patterns = pattern.components(separatedBy: " · ").map(trimmed).filter { !$0.isEmpty }
         let meanings = meaning.components(separatedBy: "; ").map(trimmed).filter { !$0.isEmpty }

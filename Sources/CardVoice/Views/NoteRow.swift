@@ -2,6 +2,8 @@ import SwiftUI
 
 struct NoteRow: View {
     let note: CardVoiceNote
+    let voice: KokoroVoice
+    let audioFilename: String
     let hasAudio: Bool
     let isWorking: Bool
     let generate: () -> Void
@@ -13,6 +15,9 @@ struct NoteRow: View {
             HStack {
                 Text(note.targets.joined(separator: " · ")).font(.headline)
                 Spacer()
+                Text(voice.displayName)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 Label(hasAudio ? "Ready" : "Missing", systemImage: hasAudio ? "checkmark.circle.fill" : "waveform.badge.exclamationmark")
                     .font(.caption).foregroundStyle(hasAudio ? .green : .secondary)
             }
@@ -26,7 +31,7 @@ struct NoteRow: View {
                 Button("Play", action: play).disabled(!hasAudio)
                 Button("macOS Preview", action: systemSpeak)
                 Spacer()
-                Text(note.resolvedAudioFilename).font(.caption.monospaced()).foregroundStyle(.secondary)
+                Text(audioFilename).font(.caption.monospaced()).foregroundStyle(.secondary)
             }
         }
         .padding(14)

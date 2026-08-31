@@ -74,6 +74,12 @@ final class CardVoiceNoteTests: XCTestCase {
         XCTAssertEqual(note.resolvedAudioFilename, "lesson-026_kokoro.wav")
     }
 
+    func testVoiceSpecificFilenamePreservesTheAssignedKokoroSpeaker() {
+        let note = makeNote(id: "cv026", audioFilename: "lesson-026.mp3")
+
+        XCTAssertEqual(note.kokoroAudioFilename(voiceID: 7), "lesson-026_kokoro_v7.wav")
+    }
+
     func testEmptyFilenameNeverCountsTheAudioDirectoryAsGeneratedAudio() {
         XCTAssertNil(AudioStore.existingURL(filename: ""))
     }

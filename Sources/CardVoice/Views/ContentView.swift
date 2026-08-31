@@ -52,6 +52,8 @@ struct ContentView: View {
                             ForEach(vm.notes) { note in
                                 NoteRow(
                                     note: note,
+                                    voice: vm.assignedKokoroVoice(for: note),
+                                    audioFilename: vm.audioFilename(for: note),
                                     hasAudio: vm.hasAudio(note),
                                     isWorking: vm.isWorking || !vm.kokoroModelInstalled,
                                     generate: { Task { _ = await vm.generateAudio(for: note) } },
@@ -68,7 +70,7 @@ struct ContentView: View {
             HStack {
                 Text(vm.status).font(.caption).foregroundStyle(.secondary).lineLimit(2)
                 Spacer()
-                Text("Kokoro offline · \(vm.selectedKokoroVoice.displayName)")
+                Text("Kokoro offline · balanced 4-voice mix")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }.padding(.horizontal, 16).padding(.vertical, 10)

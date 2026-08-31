@@ -41,6 +41,7 @@ enum APKGService {
     static func exportAudioZip(
         package: LoadedPackage,
         destination: URL,
+        audioFilename: (CardVoiceNote) -> String = { $0.resolvedAudioFilename },
         audioURL: (String) -> URL? = AudioStore.existingURL
     ) throws {
         let temp = FileManager.default.temporaryDirectory.appending(path: "CardVoice-Audio-\(UUID().uuidString)", directoryHint: .isDirectory)
@@ -49,7 +50,7 @@ enum APKGService {
 
         var exported: [[String: String]] = []
         for note in package.manifest.notes {
-            let filename = note.resolvedAudioFilename
+            let filename = audioFilename(note)
             guard let source = audioURL(filename) else { throw APKGError.missingAudio(filename) }
             try FileManager.default.copyItem(at: source, to: temp.appending(path: filename))
             exported.append(["cardVoiceID": note.id, "guid": note.guid, "filename": filename, "sentence": note.sentence])
@@ -62,6 +63,7 @@ enum APKGService {
     static func exportAnkiWithAudio(
         package: LoadedPackage,
         destination: URL,
+        audioFilename: (CardVoiceNote) -> String = { $0.resolvedAudioFilename },
         audioURL: (String) -> URL? = AudioStore.existingURL
     ) throws {
         let dir = try extract(url: package.sourceURL)
@@ -79,7 +81,7 @@ enum APKGService {
 
         var sql: [String] = []
         for note in package.manifest.notes {
-            let filename = note.resolvedAudioFilename
+            let filename = audioFilename(note)
             guard let audio = audioURL(filename) else { throw APKGError.missingAudio(filename) }
             while media[String(nextMedia)] != nil { nextMedia += 1 }
             try FileManager.default.copyItem(at: audio, to: dir.appending(path: String(nextMedia)))
