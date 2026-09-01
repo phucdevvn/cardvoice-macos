@@ -16,6 +16,7 @@ Speech generation runs locally on the Mac. No account, cloud speech service, sec
 - Put audio on the **back** of the Anki Cloze card.
 - Preview generated audio or use the built-in macOS voice as a quick fallback preview.
 - Export a new `.apkg` with `[sound:...]` attached.
+- Repair incomplete legacy Anki deck metadata during export and safely replace existing media when re-exporting.
 - Export an **Audio ZIP + manifest** fallback.
 
 ## First use

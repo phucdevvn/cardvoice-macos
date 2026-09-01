@@ -7,6 +7,7 @@ enum APKGError: LocalizedError {
     case unsupportedFieldLayout(fieldCount: Int, audioFieldIndex: Int)
     case missingCollection
     case missingAudio(String)
+    case invalidCollectionMetadata(String)
     case commandFailed(String)
 
     var errorDescription: String? {
@@ -18,6 +19,7 @@ enum APKGError: LocalizedError {
             return "Unsupported Anki field layout: \(fieldCount) fields with audio at index \(audioFieldIndex)."
         case .missingCollection: return "The Anki package does not contain collection.anki2."
         case let .missingAudio(name): return "Missing generated audio: \(name)"
+        case let .invalidCollectionMetadata(message): return "Invalid Anki collection metadata: \(message)"
         case let .commandFailed(message): return message
         }
     }
@@ -70,6 +72,7 @@ enum APKGService {
         defer { try? FileManager.default.removeItem(at: dir) }
         let db = dir.appending(path: "collection.anki2")
         guard FileManager.default.fileExists(atPath: db.path) else { throw APKGError.missingCollection }
+        try normalizeLegacyAnkiMetadata(in: db)
 
         let mediaURL = dir.appending(path: "media")
         var media: [String: String] = [:]
@@ -83,10 +86,20 @@ enum APKGService {
         for note in package.manifest.notes {
             let filename = audioFilename(note)
             guard let audio = audioURL(filename) else { throw APKGError.missingAudio(filename) }
-            while media[String(nextMedia)] != nil { nextMedia += 1 }
-            try FileManager.default.copyItem(at: audio, to: dir.appending(path: String(nextMedia)))
-            media[String(nextMedia)] = filename
-            nextMedia += 1
+            let mediaKey: String
+            if let existing = media.first(where: { $0.value == filename })?.key {
+                mediaKey = existing
+            } else {
+                while media[String(nextMedia)] != nil { nextMedia += 1 }
+                mediaKey = String(nextMedia)
+                media[mediaKey] = filename
+                nextMedia += 1
+            }
+            let embeddedAudio = dir.appending(path: mediaKey)
+            if FileManager.default.fileExists(atPath: embeddedAudio.path) {
+                try FileManager.default.removeItem(at: embeddedAudio)
+            }
+            try FileManager.default.copyItem(at: audio, to: embeddedAudio)
 
             let fields = try ankiFields(for: note, audioMarkup: "[sound:\(filename)]")
                 .joined(separator: "\u{001F}")
@@ -94,7 +107,9 @@ enum APKGService {
             let escapedGuid = sqlEscape(note.guid)
             sql.append("UPDATE notes SET flds='\(escapedFields)', mod=strftime('%s','now'), usn=-1 WHERE guid='\(escapedGuid)';")
         }
+        sql.insert("BEGIN IMMEDIATE;", at: 0)
         sql.append("UPDATE col SET mod=(strftime('%s','now') * 1000);")
+        sql.append("COMMIT;")
         try run("/usr/bin/sqlite3", [db.path, sql.joined(separator: "\n")])
         let mediaData = try JSONEncoder().encode(media)
         try mediaData.write(to: mediaURL, options: .atomic)
@@ -113,6 +128,81 @@ enum APKGService {
                 audioFieldIndex: note.audioFieldIndex
             )
         }
+    }
+
+    static func normalizeLegacyAnkiMetadata(in database: URL) throws {
+        var decks = try readJSONObject(column: "decks", from: database)
+        for key in decks.keys {
+            guard var deck = decks[key] as? [String: Any] else {
+                throw APKGError.invalidCollectionMetadata("deck \(key) is not an object")
+            }
+            setDefault(&deck, key: "lrnToday", value: [0, 0])
+            setDefault(&deck, key: "revToday", value: [0, 0])
+            setDefault(&deck, key: "newToday", value: [0, 0])
+            setDefault(&deck, key: "timeToday", value: [0, 0])
+            setDefault(&deck, key: "collapsed", value: false)
+            setDefault(&deck, key: "desc", value: "")
+            setDefault(&deck, key: "dyn", value: 0)
+            setDefault(&deck, key: "extendNew", value: 0)
+            setDefault(&deck, key: "extendRev", value: 50)
+            setDefault(&deck, key: "conf", value: 1)
+            decks[key] = deck
+        }
+
+        var models = try readJSONObject(column: "models", from: database)
+        for key in models.keys {
+            guard var model = models[key] as? [String: Any] else {
+                throw APKGError.invalidCollectionMetadata("note type \(key) is not an object")
+            }
+            setDefault(&model, key: "latexPre", value: "")
+            setDefault(&model, key: "latexPost", value: "")
+            setDefault(&model, key: "latexsvg", value: false)
+            setDefault(&model, key: "req", value: [])
+            setDefault(&model, key: "tags", value: [])
+            setDefault(&model, key: "vers", value: [])
+
+            if var templates = model["tmpls"] as? [[String: Any]] {
+                for index in templates.indices {
+                    setDefault(&templates[index], key: "did", value: NSNull())
+                    setDefault(&templates[index], key: "bqfmt", value: "")
+                    setDefault(&templates[index], key: "bafmt", value: "")
+                    setDefault(&templates[index], key: "bfont", value: "")
+                    setDefault(&templates[index], key: "bsize", value: 0)
+                }
+                model["tmpls"] = templates
+            }
+            models[key] = model
+        }
+
+        var configuration = try readJSONObject(column: "conf", from: database)
+        setDefault(&configuration, key: "collapseTime", value: 1200)
+        setDefault(&configuration, key: "newBury", value: true)
+
+        var deckConfigurations = try readJSONObject(column: "dconf", from: database)
+        for key in deckConfigurations.keys {
+            guard var deckConfiguration = deckConfigurations[key] as? [String: Any] else {
+                throw APKGError.invalidCollectionMetadata("deck configuration \(key) is not an object")
+            }
+            if var newCards = deckConfiguration["new"] as? [String: Any] {
+                setDefault(&newCards, key: "separate", value: true)
+                deckConfiguration["new"] = newCards
+            }
+            if var reviews = deckConfiguration["rev"] as? [String: Any] {
+                setDefault(&reviews, key: "minSpace", value: 1)
+                deckConfiguration["rev"] = reviews
+            }
+            deckConfigurations[key] = deckConfiguration
+        }
+
+        let values = try [decks, models, configuration, deckConfigurations].map(jsonString)
+        let sql = """
+        UPDATE col SET
+          decks='\(sqlEscape(values[0]))',
+          models='\(sqlEscape(values[1]))',
+          conf='\(sqlEscape(values[2]))',
+          dconf='\(sqlEscape(values[3]))';
+        """
+        try run("/usr/bin/sqlite3", [database.path, sql])
     }
 
     private static func extract(url: URL) throws -> URL {
@@ -134,6 +224,32 @@ enum APKGService {
 
     private static func sqlEscape(_ value: String) -> String {
         value.replacingOccurrences(of: "'", with: "''")
+    }
+
+    private static func readJSONObject(column: String, from database: URL) throws -> [String: Any] {
+        let text = try run("/usr/bin/sqlite3", [database.path, "SELECT \(column) FROM col;"])
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let data = text.data(using: .utf8),
+              let object = try? JSONSerialization.jsonObject(with: data),
+              let dictionary = object as? [String: Any] else {
+            throw APKGError.invalidCollectionMetadata("\(column) is not a JSON object")
+        }
+        return dictionary
+    }
+
+    private static func jsonString(_ object: [String: Any]) throws -> String {
+        guard JSONSerialization.isValidJSONObject(object) else {
+            throw APKGError.invalidCollectionMetadata("could not encode normalized JSON")
+        }
+        let data = try JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
+        guard let text = String(data: data, encoding: .utf8) else {
+            throw APKGError.invalidCollectionMetadata("normalized JSON is not UTF-8")
+        }
+        return text
+    }
+
+    private static func setDefault(_ dictionary: inout [String: Any], key: String, value: Any) {
+        if dictionary[key] == nil { dictionary[key] = value }
     }
 
     @discardableResult
