@@ -184,8 +184,8 @@ final class AppViewModel: ObservableObject {
         guard completedCount == notes.count else { status = "Generate all audio before exporting."; return }
         let panel = NSSavePanel()
         panel.title = "Export generated audio ZIP"
-        panel.nameFieldStringValue = "CardVoice-Audio.zip"
         panel.allowedContentTypes = [.zip]
+        panel.nameFieldStringValue = "CardVoice-Audio"
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
             try APKGService.exportAudioZip(
@@ -204,8 +204,8 @@ final class AppViewModel: ObservableObject {
         guard completedCount == notes.count else { status = "Generate all audio before exporting."; return }
         let panel = NSSavePanel()
         panel.title = "Export Anki deck with audio"
-        panel.nameFieldStringValue = package.sourceURL.deletingPathExtension().lastPathComponent + "-audio.apkg"
         if let type = UTType(filenameExtension: "apkg") { panel.allowedContentTypes = [type] }
+        panel.nameFieldStringValue = package.sourceURL.deletingPathExtension().lastPathComponent + "-audio"
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
             try APKGService.exportAnkiWithAudio(
